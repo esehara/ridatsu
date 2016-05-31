@@ -1,8 +1,11 @@
 #lang racket
 
 (define (any->string x)
-  (cond [(number? x) (number->string x)]
-        [(boolean? x) (if x "true" "false")]))
+  (cond
+    [(symbol? x) (symbol->string x)]
+    [(number? x) (number->string x)]
+    [(boolean? x) (if x "true" "false")]
+    [else x]))
 
 (define (template-repeat x name)
   (let ([str-x (any->string x)])
@@ -26,13 +29,27 @@
                         "  " (evalto (list x) (cdr env))
                         "\n}")]))
 
-(define (evalto-symbol x env)
-  (let ([rule (car x)]))
-  (cond [else "TODO"])
+(define (valueto x env)
+  (cond
+    [(number? x) x]
+    [(string? x) (valueto (cadr (car (filter (lambda (y) (string=? x (car y))) env))) env)]
+    [else x]))
 
+(define (evalto-plus x env) "TODO"
+  (if (not (= 3 (length x))) (raise "Apply plus Error: Wrong argument numeber.")
+      (let ([e1 (second x)]
+            [e2 (third  x)])
+            (string-append (any->string e1) " + " (any->string e2) " evalto "
+                           (any->string (+ (valueto e1 env) (valueto e2 env))) " by E-Plus {/n"
+                           ))))
+
+(define (evalto-symbol x env)
+  (let ([rule (car x)])
+  (cond [(symbol=? rule 'plus) (evalto-plus x env)])))
+         
 (define (evalto x env)
-  (cond [(not (or (list? x)))   (raise "Evalto Error: Expected List" #f)]
-        [(not (or (list? env))) (raise "Evalto Error: Enviroment must be List" #f)]
+  (cond [(not (list? x))   (raise "Evalto Error: Expected List" #f)]
+        [(not (list? env)) (raise "Evalto Error: Enviroment must be List" #f)]
         [else
          (string-append
           (env->string env)
